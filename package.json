@@ -1,0 +1,30 @@
+{
+  "name": "bmad-opencode-extensions",
+  "version": "0.1.0",
+  "description": "BMAD OpenCode Engine - Extensions for integrating BMAD Method with sst/opencode",
+  "type": "module",
+  "scripts": {
+    "generate-config": "npx tsx scripts/agent-loader/index.ts",
+    "dev": "npx tsx --watch scripts/agent-loader/index.ts",
+    "build": "go build -o dist/workflow-engine ./packages/workflow-engine",
+    "test": "echo \"Tests to be implemented\" && exit 0"
+  },
+  "keywords": [
+    "bmad",
+    "opencode",
+    "ai-agents",
+    "workflow-engine",
+    "methodology"
+  ],
+  "author": "BMAD Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "glob": "^10.3.0",
+    "gray-matter": "^4.0.3",
+    "tsx": "^4.20.5"
+  }
+}

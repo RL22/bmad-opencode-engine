@@ -1,0 +1,45 @@
+{
+  "agent": {
+    "growth-marketer": {
+      "description": "Growth marketing specialist for user acquisition and retention",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.3,
+      "tools": {
+        "write": true,
+        "edit": false,
+        "bash": false,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/growth-marketer.md}"
+    },
+    "dev": {
+      "description": "Full-stack developer for implementation and coding",
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true,
+        "task": true
+      },
+      "prompt": "{file:bmad-core/agents/dev.md}"
+    },
+    "architect": {
+      "description": "System architect for holistic application design",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.2,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/architect.md}"
+    }
+  },
+  "$schema": "https://opencode.ai/config.json"
+}

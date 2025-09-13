@@ -1,0 +1,18 @@
+name: Create Simple Documentation
+description: Generate a basic documentation file using the architect agent
+variables:
+  project_name: "BMAD OpenCode Integration"
+  doc_type: "API Documentation"
+
+steps:
+  - agent: architect
+    task: create-documentation
+    prompt: "Create a simple API documentation template for the BMAD OpenCode Engine project. Include sections for overview, authentication, endpoints, and examples."
+
+  - agent: dev
+    task: review-and-refine
+    prompt: "Review the generated documentation and add technical implementation details and code examples where appropriate."
+
+  - agent: growth-marketer
+    task: add-user-perspective
+    prompt: "Review the documentation from a user perspective and suggest improvements for clarity and onboarding experience."
