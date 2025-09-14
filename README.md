@@ -8,6 +8,7 @@ This repository contains the foundational components for the BMAD OpenCode Engin
 
 - **Agent Loader**: TypeScript script that converts BMAD `.md` agent files into `opencode.json` configuration
 - **Workflow Engine**: Go server plugin that executes BMAD YAML workflows within OpenCode
+- **MMOA Implementation**: Multi-Model Orchestration Architecture planning document with 7 core task categories and cost-optimized model selection
 
 ## Project Structure
 
@@ -19,9 +20,32 @@ This repository contains the foundational components for the BMAD OpenCode Engin
 │   └── /agent-loader           # TypeScript config generator
 ├── /bmad-core                  # BMAD core definitions (submodule)
 ├── /example-project            # Sample project for testing
+├── grok--mmao-implementation-planning.md  # MMOA architecture document
 ├── package.json                # TypeScript dependencies
 └── go.mod                     # Go dependencies
 ```
+
+## MMOA (Multi-Model Orchestration Architecture)
+
+The repository includes comprehensive planning for intelligent AI model selection and cost optimization:
+
+### Key Features
+- **7 Core Task Categories**: Streamlined from 21 to fundamental categories (Simple/Quick, General Development, Coding/Implementation, Analysis/Research, Creative/Content, Complex Reasoning, Specialized)
+- **Legacy Model Primaries**: `claude-sonnet-4` for development/coding, `gemini-2.5-pro` for analysis/research
+- **Cost-Effective Backups**: Full fallback chains with verified pricing from official providers
+- **Image Generation Support**: Multi-provider options for visual content creation
+
+### Model Coverage
+- **Anthropic**: Claude models (legacy + modern) for reliable performance
+- **Google**: Gemini models for large context and analysis tasks
+- **OpenAI**: GPT models for cost-effective and specialized tasks
+
+### Implementation Benefits
+- **60-70% Cost Reduction**: Intelligent model routing based on task characteristics
+- **Proven Reliability**: Legacy models for core tasks, modern models for optimization
+- **Comprehensive Coverage**: All major AI providers with automatic fallbacks
+
+See [`grok--mmao-implementation-planning.md`](grok--mmao-implementation-planning.md) for complete technical specifications and rollout strategy.
 
 ## Prerequisites
 
