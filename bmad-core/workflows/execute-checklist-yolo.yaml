@@ -1,0 +1,30 @@
+# BMAD Workflow: Batch Checklist Validation
+# Epic 2 Story 2.2: Checklist-based task validation in YOLO mode
+
+name: "Execute Checklist Validation (YOLO Mode)"
+description: "Batch validation of documents against BMAD checklists with comprehensive reporting"
+
+steps:
+  - agent: "architect"
+    task: "/execute-checklist"
+    prompt: "Validate architecture document against architect checklist (comprehensive batch mode)"
+    checklist: "../checklists/architect-checklist.md"
+    mode: "yolo"
+    variables:
+      target_document: "docs/architecture/epic-1-architecture.md"
+
+  - agent: "pm"
+    task: "/execute-checklist"
+    prompt: "Validate PRD document against PM checklist (comprehensive batch mode)"
+    checklist: "../checklists/pm-checklist.md"
+    mode: "yolo"
+    variables:
+      target_document: "docs/prd.md"
+
+  - agent: "po"
+    task: "/execute-checklist"
+    prompt: "Run comprehensive product owner validation across all project documents"
+    checklist: "../checklists/po-master-checklist.md"
+    mode: "yolo"
+    variables:
+      project_scope: "BMAD OpenCode Engine Epic 2"

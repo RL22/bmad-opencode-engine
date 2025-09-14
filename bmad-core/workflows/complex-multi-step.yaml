@@ -1,0 +1,56 @@
+# BMAD Workflow: Complex Multi-Step Epic 2 Demonstration
+# Epic 2: Full demonstration of interactive and batch processing capabilities
+
+name: "Complex Multi-Step BMAD Workflow"
+description: "Full Epic 2 demonstration: template creation, validation, and iterative improvement"
+
+variables:
+  project_name: "BMAD Growth Marketing Application"
+  epic_number: "3"
+  validation_threshold: 0.85
+
+steps:
+  # Step 1: Interactive template-driven document creation
+  - agent: "architect"
+    task: "/create-doc"
+    prompt: "Create architecture document for Epic 3 using interactive elicitation"
+    template: "../templates/architecture-tmpl.yaml"
+    mode: "interactive"
+    variables:
+      document_type: "Architecture"
+      epic_focus: "Growth Marketing Application with TUI"
+
+  # Step 2: Batch validation against architecture checklist
+  - agent: "architect"
+    task: "/execute-checklist"
+    prompt: "Validate the created architecture document comprehensively"
+    checklist: "../checklists/architect-checklist.md"
+    mode: "yolo"
+    variables:
+      target_document: "docs/architecture/epic-3-architecture.md"
+
+  # Step 3: Interactive PRD creation based on validated architecture
+  - agent: "pm"
+    task: "/create-doc"
+    prompt: "Create PRD document incorporating architecture insights with user feedback"
+    template: "../templates/prd-tmpl.yaml"
+    mode: "interactive"
+    variables:
+      base_architecture: "docs/architecture/epic-3-architecture.md"
+      project_type: "Growth Marketing TUI Application"
+
+  # Step 4: Comprehensive multi-checklist validation
+  - agent: "pm"
+    task: "/execute-checklist"
+    prompt: "Validate PRD against PM requirements"
+    checklist: "../checklists/pm-checklist.md"
+    mode: "yolo"
+
+  # Step 5: Final product owner validation
+  - agent: "po"
+    task: "/execute-checklist"
+    prompt: "Execute master validation across all Epic 3 deliverables"
+    checklist: "../checklists/po-master-checklist.md"
+    mode: "interactive"
+    variables:
+      validation_scope: "Epic 3 Complete Deliverable Set"

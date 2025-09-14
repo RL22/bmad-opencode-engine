@@ -1,0 +1,23 @@
+# BMAD Workflow: Interactive Document Creation
+# Epic 2 Story 2.1: Template-driven interactive document creation
+
+name: "Create Document with Template"
+description: "Interactive document creation using BMAD templates with user elicitation"
+
+steps:
+  - agent: "architect"
+    task: "/create-doc"
+    prompt: "Create a PRD document using the interactive template-driven workflow"
+    template: "bmad-core/templates/prd-tmpl.yaml"
+    mode: "yolo"
+    variables:
+      project_name: "BMAD OpenCode Engine"
+      document_type: "PRD"
+
+  - agent: "pm"
+    task: "/execute-checklist"
+    prompt: "Validate the created PRD document against PM checklist requirements"
+    checklist: "bmad-core/checklists/pm-checklist.md"
+    mode: "yolo"
+    variables:
+      target_document: "docs/prd.md"
