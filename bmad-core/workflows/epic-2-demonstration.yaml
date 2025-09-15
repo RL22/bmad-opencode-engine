@@ -1,0 +1,49 @@
+# Epic 2 Complete Demonstration Workflow
+# Demonstrates both template-driven document creation and checklist validation
+
+name: "Epic 2 Complete Demonstration"
+description: "Full demonstration of Epic 2 capabilities: template processing + checklist validation"
+
+variables:
+  project_name: "BMAD OpenCode Engine"
+  epic_number: "2"
+
+steps:
+  # Step 1: Template-driven document creation
+  - agent: "architect"
+    task: "/create-doc"
+    prompt: "Create a comprehensive project brief using the enhanced template system"
+    template: "bmad-core/templates/project-brief-tmpl.yaml"
+    mode: "interactive"
+    variables:
+      document_type: "Project Brief"
+      project_focus: "Epic 2 Enhanced Workflow Engine"
+
+  # Step 2: Checklist validation of created document
+  - agent: "qa"
+    task: "/execute-checklist"
+    prompt: "Validate the created project brief against comprehensive quality criteria"
+    checklist: "bmad-core/checklists/pm-checklist.md"
+    mode: "yolo"
+    variables:
+      validation_scope: "Project Brief Quality Assessment"
+      target_document: "docs/brief.md"
+
+  # Step 3: Template-driven architecture document
+  - agent: "architect"
+    task: "/create-doc"
+    prompt: "Create architecture document for Epic 2 implementation"
+    template: "bmad-core/templates/architecture-tmpl.yaml"
+    mode: "interactive"
+    variables:
+      document_type: "Architecture"
+      epic_focus: "Enhanced Workflow Engine with Templates and Checklists"
+
+  # Step 4: Comprehensive validation of all deliverables
+  - agent: "po"
+    task: "/execute-checklist"
+    prompt: "Execute master validation across all Epic 2 deliverables"
+    checklist: "bmad-core/checklists/po-master-checklist.md"
+    mode: "yolo"
+    variables:
+      validation_scope: "Epic 2 Complete Deliverable Set"

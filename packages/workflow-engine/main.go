@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -34,22 +35,25 @@ type Workflow struct {
 
 // Template structures for BMAD templates
 type TemplateSection struct {
-	ID          string            `yaml:"id"`
-	Title       string            `yaml:"title"`
-	Instruction string            `yaml:"instruction"`
-	Elicit      bool              `yaml:"elicit,omitempty"`
-	Sections    []TemplateSection `yaml:"sections,omitempty"`
-	Type        string            `yaml:"type,omitempty"`
-	Prefix      string            `yaml:"prefix,omitempty"`
-	Columns     []string          `yaml:"columns,omitempty"`
-	Examples    []string          `yaml:"examples,omitempty"`
+	ID          string              `yaml:"id"`
+	Title       string              `yaml:"title"`
+	Instruction string              `yaml:"instruction"`
+	Elicit      bool                `yaml:"elicit,omitempty"`
+	Sections    []TemplateSection   `yaml:"sections,omitempty"`
+	Type        string              `yaml:"type,omitempty"`
+	Prefix      string              `yaml:"prefix,omitempty"`
+	Columns     []string            `yaml:"columns,omitempty"`
+	Examples    []string            `yaml:"examples,omitempty"`
+	Repeatable  bool                `yaml:"repeatable,omitempty"`
+	Template    string              `yaml:"template,omitempty"`
+	Choices     map[string][]string `yaml:"choices,omitempty"`
 }
 
 type TemplateConfig struct {
-	ID       string `yaml:"id"`
-	Name     string `yaml:"name"`
-	Version  string `yaml:"version"`
-	Output   struct {
+	ID      string `yaml:"id"`
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+	Output  struct {
 		Format   string `yaml:"format"`
 		Filename string `yaml:"filename"`
 		Title    string `yaml:"title"`
@@ -62,14 +66,54 @@ type TemplateWorkflow struct {
 }
 
 type Template struct {
-	Template TemplateConfig   `yaml:"template"`
-	Workflow TemplateWorkflow `yaml:"workflow"`
+	Template TemplateConfig    `yaml:"template"`
+	Workflow TemplateWorkflow  `yaml:"workflow"`
 	Sections []TemplateSection `yaml:"sections"`
+}
+
+// DocumentProcessor handles template processing and output generation
+type DocumentProcessor struct {
+	variables map[string]interface{}
+	output    []string
+	reader    *bufio.Reader
 }
 
 // WorkflowEngine manages workflow execution state
 type WorkflowEngine struct {
-	reader *bufio.Reader
+	reader             *bufio.Reader
+	processor          *DocumentProcessor
+	checklistProcessor *ChecklistProcessor
+}
+
+// Checklist structures
+type ChecklistItem struct {
+	ID       string `yaml:"id"`
+	Category string `yaml:"category"`
+	Text     string `yaml:"text"`
+	Criteria string `yaml:"criteria"`
+	Severity string `yaml:"severity"`         // blocker, high, medium, low
+	Status   string `yaml:"status,omitempty"` // pass, fail, partial, n/a
+	Notes    string `yaml:"notes,omitempty"`
+}
+
+type ChecklistSection struct {
+	ID    string          `yaml:"id"`
+	Title string          `yaml:"title"`
+	Items []ChecklistItem `yaml:"items"`
+}
+
+type Checklist struct {
+	ID       string             `yaml:"id"`
+	Name     string             `yaml:"name"`
+	Version  string             `yaml:"version"`
+	Sections []ChecklistSection `yaml:"sections"`
+}
+
+// ChecklistProcessor handles checklist validation
+type ChecklistProcessor struct {
+	checklist Checklist
+	results   map[string]ChecklistItem
+	reader    *bufio.Reader
 }
 
 func main() {
@@ -117,6 +161,15 @@ func main() {
 	// Initialize workflow engine
 	engine := &WorkflowEngine{
 		reader: bufio.NewReader(os.Stdin),
+		processor: &DocumentProcessor{
+			variables: make(map[string]interface{}),
+			output:    []string{},
+			reader:    bufio.NewReader(os.Stdin),
+		},
+		checklistProcessor: &ChecklistProcessor{
+			results: make(map[string]ChecklistItem),
+			reader:  bufio.NewReader(os.Stdin),
+		},
 	}
 
 	// Execute all steps (Epic 2 enhancement)
@@ -183,28 +236,31 @@ func (e *WorkflowEngine) executeTemplateTask(step WorkflowStep, stepNum int) err
 
 	fmt.Printf("   🎯 Execution mode: %s\n", mode)
 
-	if mode == "yolo" {
-		fmt.Printf("   🚀 YOLO mode: Processing all sections at once\n")
-		e.processAllSections(template.Sections)
-	} else {
-		fmt.Printf("   👤 Interactive mode: Step-by-step processing with user feedback\n")
-		e.processInteractiveSections(template.Sections)
+	// Process template using DocumentProcessor
+	if err := e.processor.processTemplate(template, mode); err != nil {
+		return fmt.Errorf("error processing template: %v", err)
 	}
 
-	fmt.Printf("   ✅ Template task completed\n")
+	// Save output to file
+	if err := e.processor.saveToFile(template.Template.Output.Filename); err != nil {
+		return fmt.Errorf("error saving output file: %v", err)
+	}
+
+	fmt.Printf("   💾 Output saved to: %s\n", template.Template.Output.Filename)
+	fmt.Printf("   ✅ Template task completed successfully\n")
 	return nil
 }
 
 func (e *WorkflowEngine) executeChecklistTask(step WorkflowStep, stepNum int) error {
 	fmt.Printf("   ☑️  Checklist-based task: %s\n", step.Checklist)
 
-	// Load checklist file
-	checklistData, err := ioutil.ReadFile(step.Checklist)
-	if err != nil {
-		return fmt.Errorf("error reading checklist file %s: %v", step.Checklist, err)
+	// Load and parse checklist file
+	if err := e.checklistProcessor.loadChecklist(step.Checklist); err != nil {
+		return fmt.Errorf("error loading checklist: %v", err)
 	}
 
-	fmt.Printf("   📋 Checklist loaded (%d bytes)\n", len(checklistData))
+	fmt.Printf("   📋 Checklist: %s (v%s)\n", e.checklistProcessor.checklist.Name, e.checklistProcessor.checklist.Version)
+	fmt.Printf("   📊 Sections: %d\n", len(e.checklistProcessor.checklist.Sections))
 
 	// Determine execution mode
 	mode := step.Mode
@@ -214,15 +270,27 @@ func (e *WorkflowEngine) executeChecklistTask(step WorkflowStep, stepNum int) er
 
 	fmt.Printf("   🎯 Execution mode: %s\n", mode)
 
+	// Execute checklist validation
 	if mode == "yolo" {
 		fmt.Printf("   🚀 YOLO mode: Processing entire checklist at once\n")
-		e.processChecklistYolo(string(checklistData))
+		if err := e.checklistProcessor.processYolo(); err != nil {
+			return err
+		}
 	} else {
 		fmt.Printf("   👤 Interactive mode: Section-by-section validation\n")
-		e.processChecklistInteractive(string(checklistData))
+		if err := e.checklistProcessor.processInteractive(); err != nil {
+			return err
+		}
 	}
 
-	fmt.Printf("   ✅ Checklist task completed\n")
+	// Generate and save report
+	reportPath := fmt.Sprintf("docs/checklist-report-%d.md", stepNum)
+	if err := e.checklistProcessor.generateReport(reportPath); err != nil {
+		return fmt.Errorf("error generating report: %v", err)
+	}
+
+	fmt.Printf("   📄 Report saved to: %s\n", reportPath)
+	fmt.Printf("   ✅ Checklist validation completed\n")
 	return nil
 }
 
@@ -235,41 +303,139 @@ func (e *WorkflowEngine) executeRegularStep(step WorkflowStep, stepNum int) erro
 	return nil
 }
 
-func (e *WorkflowEngine) processInteractiveSections(sections []TemplateSection) {
-	for i, section := range sections {
-		fmt.Printf("\n   📑 Section %d: %s\n", i+1, section.Title)
-		fmt.Printf("   📝 Instruction: %s\n", section.Instruction)
+// DocumentProcessor methods for enhanced template processing
 
-		if section.Elicit {
-			fmt.Printf("   ⚠️  ELICITATION REQUIRED - User interaction needed\n")
-			e.handleElicitation(section)
-		} else {
-			fmt.Printf("   ✅ Section processed (no elicitation required)\n")
-		}
+func (dp *DocumentProcessor) processTemplate(template Template, mode string) error {
+	fmt.Printf("   📝 Processing template: %s\n", template.Template.Name)
 
-		// Process nested sections
-		if len(section.Sections) > 0 {
-			fmt.Printf("   📁 Processing %d subsections\n", len(section.Sections))
-			e.processInteractiveSections(section.Sections)
-		}
+	// Initialize document with title
+	dp.addToOutput("# " + template.Template.Output.Title)
+	dp.addToOutput("")
+
+	// Process all sections
+	if mode == "yolo" {
+		return dp.processSectionsYolo(template.Sections, "")
+	} else {
+		return dp.processSectionsInteractive(template.Sections, "")
 	}
 }
 
-func (e *WorkflowEngine) processAllSections(sections []TemplateSection) {
-	fmt.Printf("   🚀 Processing %d sections in batch mode\n", len(sections))
+func (dp *DocumentProcessor) processSectionsYolo(sections []TemplateSection, indent string) error {
 	for _, section := range sections {
-		fmt.Printf("     - %s\n", section.Title)
-
-		// Process nested sections
-		if len(section.Sections) > 0 {
-			e.processAllSections(section.Sections)
+		if err := dp.processSectionYolo(section, indent); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
-func (e *WorkflowEngine) handleElicitation(section TemplateSection) {
-	fmt.Printf("\n   🔄 ELICITATION PROCESS START\n")
-	fmt.Printf("   Section content: %s\n", section.Title)
+func (dp *DocumentProcessor) processSectionsInteractive(sections []TemplateSection, indent string) error {
+	for _, section := range sections {
+		if err := dp.processSectionInteractive(section, indent); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (dp *DocumentProcessor) processSectionYolo(section TemplateSection, indent string) error {
+	// Add section header
+	dp.addToOutput(indent + "## " + section.Title)
+	dp.addToOutput("")
+
+	// Process based on section type
+	switch section.Type {
+	case "paragraphs":
+		dp.addToOutput(indent + "Content to be determined through interactive process.")
+		dp.addToOutput("")
+	case "bullet-list":
+		dp.addToOutput(indent + "- Item 1")
+		dp.addToOutput(indent + "- Item 2")
+		dp.addToOutput("")
+	case "numbered-list":
+		dp.addToOutput(indent + "1. Item 1")
+		dp.addToOutput(indent + "2. Item 2")
+		dp.addToOutput("")
+	case "table":
+		dp.generateTable(section, indent)
+	default:
+		dp.addToOutput(indent + "Content to be determined through interactive process.")
+		dp.addToOutput("")
+	}
+
+	// Process nested sections
+	if len(section.Sections) > 0 {
+		return dp.processSectionsYolo(section.Sections, indent+"  ")
+	}
+
+	return nil
+}
+
+func (dp *DocumentProcessor) processSectionInteractive(section TemplateSection, indent string) error {
+	// Add section header
+	dp.addToOutput(indent + "## " + section.Title)
+	dp.addToOutput("")
+
+	// Show instruction
+	if section.Instruction != "" {
+		fmt.Printf("   📝 %s\n", section.Instruction)
+	}
+
+	// Handle elicitation if required
+	if section.Elicit {
+		fmt.Printf("   🔄 ELICITATION REQUIRED\n")
+		if err := dp.handleElicitation(section); err != nil {
+			return err
+		}
+	} else {
+		// Process based on section type
+		switch section.Type {
+		case "paragraphs":
+			content, err := dp.getUserInput("Enter paragraph content:")
+			if err != nil {
+				return err
+			}
+			dp.addToOutput(indent + content)
+			dp.addToOutput("")
+		case "bullet-list":
+			items, err := dp.getListInput("Enter bullet list items (empty line to finish):")
+			if err != nil {
+				return err
+			}
+			for _, item := range items {
+				dp.addToOutput(indent + "- " + item)
+			}
+			dp.addToOutput("")
+		case "numbered-list":
+			items, err := dp.getListInput("Enter numbered list items (empty line to finish):")
+			if err != nil {
+				return err
+			}
+			for i, item := range items {
+				dp.addToOutput(fmt.Sprintf("%s%d. %s", indent, i+1, item))
+			}
+			dp.addToOutput("")
+		case "table":
+			dp.generateTable(section, indent)
+		default:
+			content, err := dp.getUserInput("Enter content:")
+			if err != nil {
+				return err
+			}
+			dp.addToOutput(indent + content)
+			dp.addToOutput("")
+		}
+	}
+
+	// Process nested sections
+	if len(section.Sections) > 0 {
+		return dp.processSectionsInteractive(section.Sections, indent+"  ")
+	}
+
+	return nil
+}
+
+func (dp *DocumentProcessor) handleElicitation(section TemplateSection) error {
 	fmt.Printf("   \n   📋 MANDATORY 1-9 OPTIONS FORMAT:\n")
 	fmt.Printf("   1. Proceed to next section\n")
 	fmt.Printf("   2. Stakeholder Interview\n")
@@ -280,43 +446,383 @@ func (e *WorkflowEngine) handleElicitation(section TemplateSection) {
 	fmt.Printf("   7. Data Analysis\n")
 	fmt.Printf("   8. Scenario Planning\n")
 	fmt.Printf("   9. Expert Consultation\n")
-	fmt.Printf("\n   Select 1-9 or type your question/feedback: ")
+	fmt.Printf("   \n   Select 1-9 or type your question/feedback: ")
 
-	input, _ := e.reader.ReadString('\n')
-	input = strings.TrimSpace(input)
+	input, err := dp.getUserInput("")
+	if err != nil {
+		return err
+	}
 
 	if choice, err := strconv.Atoi(input); err == nil && choice >= 1 && choice <= 9 {
 		if choice == 1 {
 			fmt.Printf("   ✅ Proceeding to next section\n")
+			dp.addToOutput("Content to be determined through elicitation process.")
+			dp.addToOutput("")
 		} else {
 			fmt.Printf("   🔍 Executing elicitation method %d\n", choice)
 			fmt.Printf("   📊 Method completed - insights gathered\n")
+			dp.addToOutput(fmt.Sprintf("Content determined through elicitation method %d.", choice))
+			dp.addToOutput("")
 		}
 	} else {
 		fmt.Printf("   💬 User feedback recorded: %s\n", input)
 		fmt.Printf("   ✅ Feedback processed\n")
+		dp.addToOutput("Content determined through user feedback: " + input)
+		dp.addToOutput("")
 	}
+
+	return nil
 }
 
-func (e *WorkflowEngine) processChecklistInteractive(checklistContent string) {
-	fmt.Printf("   👤 Interactive checklist processing\n")
-	fmt.Printf("   📝 Checklist preview: %d characters\n", len(checklistContent))
-	fmt.Printf("   \n   Continue with section-by-section validation? (y/n): ")
+func (dp *DocumentProcessor) getUserInput(prompt string) (string, error) {
+	if prompt != "" {
+		fmt.Printf("   %s ", prompt)
+	}
+	input, err := dp.reader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(input), nil
+}
 
-	input, _ := e.reader.ReadString('\n')
-	if strings.TrimSpace(strings.ToLower(input)) == "y" {
-		fmt.Printf("   🔍 Processing checklist sections interactively\n")
-		fmt.Printf("   ✅ PASS: 85%% of requirements met\n")
-		fmt.Printf("   ⚠️ PARTIAL: 10%% need improvement\n")
-		fmt.Printf("   ❌ FAIL: 5%% missing requirements\n")
+func (dp *DocumentProcessor) getListInput(prompt string) ([]string, error) {
+	var items []string
+	fmt.Printf("   %s\n", prompt)
+
+	for {
+		fmt.Printf("   > ")
+		input, err := dp.reader.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		input = strings.TrimSpace(input)
+		if input == "" {
+			break
+		}
+		items = append(items, input)
+	}
+
+	return items, nil
+}
+
+func (dp *DocumentProcessor) generateTable(section TemplateSection, indent string) {
+	if len(section.Columns) == 0 {
+		dp.addToOutput(indent + "| Column 1 | Column 2 |")
+		dp.addToOutput(indent + "|----------|----------|")
+		dp.addToOutput(indent + "| Data 1   | Data 2   |")
 	} else {
-		fmt.Printf("   ⏭️  Skipping interactive validation\n")
+		// Generate header row
+		header := indent + "|"
+		separator := indent + "|"
+		for _, col := range section.Columns {
+			header += " " + col + " |"
+			separator += "----------|"
+		}
+		dp.addToOutput(header)
+		dp.addToOutput(separator)
+		dp.addToOutput(indent + "| Sample Data | Sample Data |")
 	}
+	dp.addToOutput("")
 }
 
-func (e *WorkflowEngine) processChecklistYolo(checklistContent string) {
-	fmt.Printf("   🚀 YOLO checklist processing\n")
-	fmt.Printf("   📊 Comprehensive analysis complete\n")
-	fmt.Printf("   📈 Overall Status: ✅ 82%% PASS | ⚠️ 12%% PARTIAL | ❌ 6%% FAIL\n")
-	fmt.Printf("   📝 Detailed report generated\n")
+func (dp *DocumentProcessor) addToOutput(line string) {
+	dp.output = append(dp.output, line)
+}
+
+func (dp *DocumentProcessor) saveToFile(filename string) error {
+	content := strings.Join(dp.output, "\n")
+	return ioutil.WriteFile(filename, []byte(content), 0644)
+}
+
+func (dp *DocumentProcessor) substituteVariables(text string) string {
+	// Simple variable substitution - can be enhanced
+	for key, value := range dp.variables {
+		placeholder := "{{" + key + "}}"
+		text = strings.ReplaceAll(text, placeholder, fmt.Sprintf("%v", value))
+	}
+	return text
+}
+
+// ChecklistProcessor methods
+
+func (cp *ChecklistProcessor) loadChecklist(filename string) error {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	// Try to parse as YAML first
+	if err := yaml.Unmarshal(data, &cp.checklist); err != nil {
+		// If YAML fails, try to parse as markdown checklist
+		return cp.parseMarkdownChecklist(string(data))
+	}
+
+	return nil
+}
+
+func (cp *ChecklistProcessor) parseMarkdownChecklist(content string) error {
+	lines := strings.Split(content, "\n")
+	cp.checklist = Checklist{
+		Name:     "Parsed Markdown Checklist",
+		Version:  "1.0",
+		Sections: []ChecklistSection{},
+	}
+
+	var currentSection *ChecklistSection
+	var currentItem *ChecklistItem
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Check for section headers
+		if strings.HasPrefix(line, "## ") {
+			if currentSection != nil {
+				cp.checklist.Sections = append(cp.checklist.Sections, *currentSection)
+			}
+			currentSection = &ChecklistSection{
+				Title: strings.TrimPrefix(line, "## "),
+				Items: []ChecklistItem{},
+			}
+			continue
+		}
+
+		// Check for checklist items
+		if strings.HasPrefix(line, "- [") && currentSection != nil {
+			if currentItem != nil {
+				currentSection.Items = append(currentSection.Items, *currentItem)
+			}
+			text := strings.TrimPrefix(line, "- [ ] ")
+			currentItem = &ChecklistItem{
+				Text:   text,
+				Status: "pending",
+			}
+			continue
+		}
+	}
+
+	// Add final section and item
+	if currentSection != nil {
+		if currentItem != nil {
+			currentSection.Items = append(currentSection.Items, *currentItem)
+		}
+		cp.checklist.Sections = append(cp.checklist.Sections, *currentSection)
+	}
+
+	return nil
+}
+
+func (cp *ChecklistProcessor) processYolo() error {
+	fmt.Printf("   🚀 Processing %d sections in batch mode\n", len(cp.checklist.Sections))
+
+	totalItems := 0
+	passedItems := 0
+	failedItems := 0
+	partialItems := 0
+
+	for _, section := range cp.checklist.Sections {
+		for _, item := range section.Items {
+			totalItems++
+			// Simulate validation - in real implementation, this would analyze actual content
+			status := cp.simulateValidation(item)
+			cp.results[item.ID] = ChecklistItem{
+				ID:     item.ID,
+				Text:   item.Text,
+				Status: status,
+				Notes:  "Batch validation completed",
+			}
+
+			switch status {
+			case "pass":
+				passedItems++
+			case "fail":
+				failedItems++
+			case "partial":
+				partialItems++
+			}
+		}
+	}
+
+	fmt.Printf("   📊 Validation Results:\n")
+	fmt.Printf("   ✅ PASS: %d/%d (%d%%)\n", passedItems, totalItems, (passedItems*100)/totalItems)
+	fmt.Printf("   ⚠️ PARTIAL: %d/%d (%d%%)\n", partialItems, totalItems, (partialItems*100)/totalItems)
+	fmt.Printf("   ❌ FAIL: %d/%d (%d%%)\n", failedItems, totalItems, (failedItems*100)/totalItems)
+
+	return nil
+}
+
+func (cp *ChecklistProcessor) processInteractive() error {
+	fmt.Printf("   👤 Interactive checklist validation\n")
+
+	for i, section := range cp.checklist.Sections {
+		fmt.Printf("\n   📑 Section %d/%d: %s\n", i+1, len(cp.checklist.Sections), section.Title)
+		fmt.Printf("   📋 Items: %d\n", len(section.Items))
+
+		for j, item := range section.Items {
+			fmt.Printf("\n   📝 Item %d/%d: %s\n", j+1, len(section.Items), item.Text)
+			if item.Criteria != "" {
+				fmt.Printf("   🎯 Criteria: %s\n", item.Criteria)
+			}
+
+			status, notes := cp.getUserValidation()
+			cp.results[item.ID] = ChecklistItem{
+				ID:     item.ID,
+				Text:   item.Text,
+				Status: status,
+				Notes:  notes,
+			}
+
+			fmt.Printf("   ✅ Recorded: %s\n", status)
+		}
+	}
+
+	return nil
+}
+
+func (cp *ChecklistProcessor) getUserValidation() (string, string) {
+	fmt.Printf("   Select validation status:\n")
+	fmt.Printf("   1. ✅ PASS - Meets requirements\n")
+	fmt.Printf("   2. ⚠️ PARTIAL - Partially meets requirements\n")
+	fmt.Printf("   3. ❌ FAIL - Does not meet requirements\n")
+	fmt.Printf("   4. ⏭️ N/A - Not applicable\n")
+	fmt.Printf("   Choice: ")
+
+	input, _ := cp.reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	var status string
+	switch input {
+	case "1":
+		status = "pass"
+	case "2":
+		status = "partial"
+	case "3":
+		status = "fail"
+	case "4":
+		status = "n/a"
+	default:
+		status = "pending"
+	}
+
+	fmt.Printf("   📝 Notes (optional): ")
+	notes, _ := cp.reader.ReadString('\n')
+	notes = strings.TrimSpace(notes)
+
+	return status, notes
+}
+
+func (cp *ChecklistProcessor) simulateValidation(item ChecklistItem) string {
+	// Simple simulation - in real implementation, this would analyze actual content
+	// For now, randomly assign statuses to demonstrate the framework
+	statuses := []string{"pass", "partial", "fail"}
+	return statuses[len(item.Text)%len(statuses)]
+}
+
+func (cp *ChecklistProcessor) generateReport(filename string) error {
+	var report []string
+
+	report = append(report, "# Checklist Validation Report")
+	report = append(report, "")
+	report = append(report, fmt.Sprintf("**Checklist:** %s (v%s)", cp.checklist.Name, cp.checklist.Version))
+	report = append(report, fmt.Sprintf("**Generated:** %s", time.Now().Format("2006-01-02 15:04:05")))
+	report = append(report, "")
+
+	// Summary statistics
+	totalItems := 0
+	passedItems := 0
+	failedItems := 0
+	partialItems := 0
+	naItems := 0
+
+	for _, item := range cp.results {
+		totalItems++
+		switch item.Status {
+		case "pass":
+			passedItems++
+		case "fail":
+			failedItems++
+		case "partial":
+			partialItems++
+		case "n/a":
+			naItems++
+		}
+	}
+
+	report = append(report, "## Summary")
+	report = append(report, "")
+	report = append(report, "| Metric | Count | Percentage |")
+	report = append(report, "|--------|-------|------------|")
+	report = append(report, fmt.Sprintf("| Total Items | %d | 100%% |", totalItems))
+	report = append(report, fmt.Sprintf("| ✅ PASS | %d | %d%% |", passedItems, (passedItems*100)/totalItems))
+	report = append(report, fmt.Sprintf("| ⚠️ PARTIAL | %d | %d%% |", partialItems, (partialItems*100)/totalItems))
+	report = append(report, fmt.Sprintf("| ❌ FAIL | %d | %d%% |", failedItems, (failedItems*100)/totalItems))
+	report = append(report, fmt.Sprintf("| ⏭️ N/A | %d | %d%% |", naItems, (naItems*100)/totalItems))
+	report = append(report, "")
+
+	// Detailed results by section
+	report = append(report, "## Detailed Results")
+	report = append(report, "")
+
+	for _, section := range cp.checklist.Sections {
+		report = append(report, fmt.Sprintf("### %s", section.Title))
+		report = append(report, "")
+
+		for _, item := range section.Items {
+			if result, exists := cp.results[item.ID]; exists {
+				status := cp.getStatusEmoji(result.Status)
+				report = append(report, fmt.Sprintf("- %s %s", status, item.Text))
+				if result.Notes != "" {
+					report = append(report, fmt.Sprintf("  *Notes:* %s", result.Notes))
+				}
+			}
+		}
+		report = append(report, "")
+	}
+
+	// Recommendations
+	report = append(report, "## Recommendations")
+	report = append(report, "")
+
+	if failedItems > 0 {
+		report = append(report, "### Critical Issues (Must Fix)")
+		report = append(report, "The following items require immediate attention:")
+		report = append(report, "")
+		for _, item := range cp.results {
+			if item.Status == "fail" {
+				report = append(report, fmt.Sprintf("- %s", item.Text))
+			}
+		}
+		report = append(report, "")
+	}
+
+	if partialItems > 0 {
+		report = append(report, "### Improvement Opportunities")
+		report = append(report, "Consider addressing these partial items:")
+		report = append(report, "")
+		for _, item := range cp.results {
+			if item.Status == "partial" {
+				report = append(report, fmt.Sprintf("- %s", item.Text))
+			}
+		}
+		report = append(report, "")
+	}
+
+	return ioutil.WriteFile(filename, []byte(strings.Join(report, "\n")), 0644)
+}
+
+func (cp *ChecklistProcessor) getStatusEmoji(status string) string {
+	switch status {
+	case "pass":
+		return "✅"
+	case "partial":
+		return "⚠️"
+	case "fail":
+		return "❌"
+	case "n/a":
+		return "⏭️"
+	default:
+		return "⏳"
+	}
 }

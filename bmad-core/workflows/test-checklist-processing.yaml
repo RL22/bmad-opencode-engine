@@ -1,0 +1,18 @@
+# Test Checklist Processing Workflow
+# Epic 2: Test enhanced checklist validation capabilities
+
+name: "Test Checklist Processing"
+description: "Test the enhanced checklist validation system with detailed reporting"
+
+variables:
+  project_name: "BMAD OpenCode Engine"
+
+steps:
+  - agent: "qa"
+    task: "/execute-checklist"
+    prompt: "Execute comprehensive checklist validation for the BMAD OpenCode Engine project"
+    checklist: "bmad-core/checklists/pm-checklist.md"
+    mode: "yolo"
+    variables:
+      validation_scope: "Epic 2 Implementation"
+      target_document: "docs/prd.md"

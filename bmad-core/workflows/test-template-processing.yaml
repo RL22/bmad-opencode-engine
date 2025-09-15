@@ -1,0 +1,18 @@
+# Test Template Processing Workflow
+# Epic 2: Test enhanced template processing capabilities
+
+name: "Test Template Processing"
+description: "Test the enhanced template processing system with interactive document creation"
+
+variables:
+  project_name: "BMAD OpenCode Engine"
+
+steps:
+  - agent: "architect"
+    task: "/create-doc"
+    prompt: "Create a project brief document using the enhanced template processing system"
+    template: "bmad-core/templates/project-brief-tmpl.yaml"
+    mode: "interactive"
+    variables:
+      document_type: "Project Brief"
+      project_focus: "Enhanced template processing system"
