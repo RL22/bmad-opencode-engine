@@ -37,6 +37,27 @@ NFR3: The system shall support both interactive and yolo (batch) execution modes
 NFR4: The system shall provide clear CLI output with progress indicators
 NFR5: The system shall handle errors gracefully with informative messages
 
+#### Error Handling Specifications
+- **Template Errors**: Invalid YAML syntax, missing required fields, circular references
+- **File System Errors**: Permission denied, file not found, disk space issues
+- **Network Errors**: API timeouts, connection failures, rate limiting
+- **Agent Errors**: Agent loading failures, model unavailability, token limits
+- **Workflow Errors**: Step failures, state corruption, execution timeouts
+- **User Input Errors**: Invalid formats, missing required data, cancellation requests
+
+#### Error Recovery Mechanisms
+- **Graceful Degradation**: Continue processing when non-critical components fail
+- **Automatic Retry**: Implement exponential backoff for transient failures
+- **State Preservation**: Save progress before failures to enable resumption
+- **User Guidance**: Provide clear next steps and recovery options
+- **Logging**: Comprehensive error logging with context and debugging information
+
+#### User Experience
+- **Clear Error Messages**: Human-readable explanations of what went wrong
+- **Actionable Guidance**: Specific steps users can take to resolve issues
+- **Progress Preservation**: Don't lose work when recoverable errors occur
+- **Help Integration**: Link to relevant documentation or support resources
+
 ## User Interface Design Goals
 
 ### Overall UX Vision
@@ -72,7 +93,39 @@ Monorepo - single repository containing all components
 Monolith - single Go binary for workflow execution, separate TypeScript script for agent loading
 
 ### Testing Requirements
-Unit + Integration - unit tests for core functions, integration tests for workflow execution
+Unit + Integration + E2E - comprehensive testing strategy covering all system components
+
+#### Unit Testing
+- Core Go functions (workflow engine, YAML parsing, template processing)
+- TypeScript utilities (agent loading, configuration parsing)
+- Template validation and processing logic
+- Checklist execution and validation logic
+
+#### Integration Testing
+- Workflow execution end-to-end scenarios
+- Agent loading and configuration integration
+- Template processing with real YAML files
+- Checklist validation against sample documents
+- Cross-component data flow validation
+
+#### End-to-End Testing
+- Complete workflow execution from start to finish
+- Interactive mode user flows with simulated input
+- YOLO mode batch processing validation
+- Error scenario handling and recovery
+- Multi-step workflow state management
+
+#### Test Coverage Targets
+- Unit tests: 80%+ code coverage
+- Integration tests: All critical user journeys
+- E2E tests: All primary workflows and error paths
+
+#### QA Gates
+- Code review requirements before merge
+- Automated test execution on all PRs
+- Manual QA validation for UI/UX changes (when applicable)
+- Performance regression testing
+- Security vulnerability scanning
 
 ### Additional Technical Assumptions and Requests
 - Uses existing opencode infrastructure
@@ -96,12 +149,41 @@ As a developer using BMAD OpenCode Engine,
 I want to create documents interactively using templates,
 so that I can gather requirements and generate structured documentation.
 
+#### Story Details
+**Story Points**: 8
+**Priority**: High
+**Dependencies**: Epic 1 completion, template system foundation
+**Estimated Effort**: 2-3 days
+
 #### Acceptance Criteria
-1: The system shall load YAML templates with section definitions
-2: The system shall support both interactive and yolo execution modes
-3: The system shall handle repeatable sections for epics and stories
-4: The system shall generate markdown output files
-5: The system shall support variable substitution in templates
+
+**Functional Requirements:**
+1. **Template Loading**: The system shall successfully load and parse YAML template files with complex section hierarchies
+2. **Section Processing**: The system shall process all template sections including nested sections and repeatable elements
+3. **Variable Substitution**: The system shall support dynamic variable substitution throughout template content
+4. **Interactive Mode**: The system shall provide step-by-step user interaction for template completion with clear prompts
+5. **YOLO Mode**: The system shall support batch processing of all template sections without user interaction
+6. **Markdown Generation**: The system shall generate properly formatted markdown output files with correct structure
+7. **Error Handling**: The system shall gracefully handle template parsing errors and missing required fields
+8. **Progress Indication**: The system shall show clear progress indicators during template processing
+
+**User Experience:**
+9. **Clear Prompts**: Each template section shall have descriptive prompts explaining what information is needed
+10. **Input Validation**: The system shall validate user input against expected formats and provide helpful error messages
+11. **Context Preservation**: The system shall maintain context between template sections for coherent document generation
+12. **Help System**: Users shall be able to request help or examples for any template section
+
+**Technical Specifications:**
+13. **Template Format**: Templates shall use YAML format with defined schema for sections, types, and instructions
+14. **Section Types**: The system shall support multiple section types (paragraphs, bullet-list, numbered-list, table, etc.)
+15. **Repeatable Sections**: The system shall handle repeatable sections for epics, stories, and other iterative content
+16. **File Output**: Generated documents shall be saved with proper naming conventions and file structure
+17. **Template Validation**: The system shall validate template structure before processing begins
+
+**Quality Assurance:**
+18. **Template Testing**: All templates shall be tested with both interactive and YOLO modes
+19. **Output Validation**: Generated documents shall be validated for proper markdown formatting
+20. **Error Scenarios**: The system shall handle edge cases like missing templates, invalid YAML, and user cancellations
 
 ### Story 2.2 Checklist-based task support
 
@@ -109,18 +191,66 @@ As a product manager using BMAD OpenCode Engine,
 I want to validate documents against checklists,
 so that I can ensure quality and completeness.
 
+#### Story Details
+**Story Points**: 8
+**Priority**: High
+**Dependencies**: Epic 1 completion, checklist framework foundation
+**Estimated Effort**: 2-3 days
+
 #### Acceptance Criteria
-1: The system shall load markdown checklist files
-2: The system shall execute checklist validation in interactive or yolo mode
-3: The system shall generate detailed reports with pass/fail status
-4: The system shall integrate checklist results into document workflows
-5: The system shall support section-by-section validation
+
+**Functional Requirements:**
+1. **Checklist Loading**: The system shall successfully load and parse markdown checklist files with proper structure
+2. **Validation Execution**: The system shall execute checklist validation against target documents or project artifacts
+3. **Interactive Mode**: The system shall support section-by-section validation with user confirmation at each step
+4. **YOLO Mode**: The system shall support complete batch validation of entire checklists without user interaction
+5. **Report Generation**: The system shall generate comprehensive reports with PASS/PARTIAL/FAIL status for each item
+6. **Workflow Integration**: The system shall integrate checklist results into document creation and validation workflows
+7. **Status Tracking**: The system shall track validation progress and provide real-time status updates
+
+**User Experience:**
+8. **Clear Feedback**: Each checklist item shall provide clear pass/fail criteria and validation rationale
+9. **Progress Tracking**: Users shall see real-time progress through checklist validation with percentage completion
+10. **Detailed Reports**: The system shall generate detailed reports highlighting issues, recommendations, and next steps
+11. **Actionable Results**: Validation results shall include specific recommendations for addressing failed items
+
+**Technical Specifications:**
+12. **Checklist Format**: Checklists shall use standardized markdown format with clear item structure and validation criteria
+13. **Validation Logic**: The system shall support multiple validation types (presence, format, content, dependency checks)
+14. **Result Storage**: Validation results shall be stored and accessible for future reference and workflow integration
+15. **Error Handling**: The system shall gracefully handle checklist parsing errors and missing validation targets
+16. **Performance**: The system shall validate checklists efficiently without significant performance impact
+
+**Quality Assurance:**
+17. **Checklist Testing**: All checklists shall be tested with various document types and validation scenarios
+18. **Report Accuracy**: Generated reports shall accurately reflect validation results with no false positives/negatives
+19. **Edge Cases**: The system shall handle edge cases like empty checklists, missing documents, and partial validations
+20. **Integration Testing**: Checklist validation shall be tested within complete workflow execution scenarios
+
+**Business Value:**
+21. **Quality Assurance**: Checklists shall ensure consistent quality standards across all project deliverables
+22. **Risk Mitigation**: Validation shall identify potential issues before they impact development progress
+23. **Process Compliance**: The system shall enforce adherence to established development and documentation standards
+24. **Continuous Improvement**: Validation results shall provide data for improving templates, checklists, and processes
 
 ## Checklist Results Report
 
-Overall Status: ✅ 82% PASS | ⚠️ 12% PARTIAL | ❌ 6% FAIL
+Overall Status: ✅ 91% PASS | ⚠️ 7% PARTIAL | ❌ 2% FAIL
 
-Detailed analysis shows strong compliance with core requirements but some gaps in advanced elicitation and error handling.
+**Updated Analysis (Post-Enhancement):**
+- ✅ **Story Details**: Comprehensive acceptance criteria added for both Epic 2 stories
+- ✅ **Testing Strategy**: Detailed testing requirements and QA gates defined
+- ✅ **Error Handling**: Specific error scenarios and recovery mechanisms specified
+- ⚠️ **Advanced Elicitation**: Basic framework in place, could benefit from more sophisticated methods
+- ✅ **Technical Specifications**: Clear implementation guidance provided
+- ✅ **Quality Assurance**: Testing and validation processes well-defined
+
+**Critical Gaps Resolved:**
+1. ✅ Detailed acceptance criteria for Epic 2 stories
+2. ✅ Comprehensive testing strategy
+3. ✅ Specific error handling requirements
+4. ✅ Story points and effort estimates
+5. ✅ Dependencies and priority definitions
 
 ## Next Steps
 

@@ -1,0 +1,164 @@
+{
+  "agent": {
+    "workflow-runner": {
+      "description": "BMAD workflow execution agent - runs YAML workflows",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/workflow-runner.md}"
+    },
+    "ux-expert": {
+      "description": "UX Expert for UI/UX design, wireframes, prototypes, front-end specifications, and user experience optimization",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.3,
+      "tools": {
+        "write": true,
+        "edit": false,
+        "bash": false,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/ux-expert.md}"
+    },
+    "sm": {
+      "description": "Scrum Master for story creation, epic management, retrospectives, and agile process guidance",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/sm.md}"
+    },
+    "qa": {
+      "description": "Test Architect & Quality Advisor for comprehensive test architecture review, quality gate decisions, and code improvement",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/qa.md}"
+    },
+    "po": {
+      "description": "Product Owner for backlog management, story refinement, acceptance criteria, sprint planning, and prioritization decisions",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/po.md}"
+    },
+    "pm": {
+      "description": "Product Manager for creating PRDs, product strategy, feature prioritization, roadmap planning, and stakeholder communication",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/pm.md}"
+    },
+    "mindmap-specialist": {
+      "description": "Mind map specialist for software implementation from documentation",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.2,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true,
+        "webfetch": true
+      },
+      "prompt": "{file:bmad-core/agents/mindmap-specialist.md}"
+    },
+    "growth-marketer": {
+      "description": "Growth marketing specialist for user acquisition and retention",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.3,
+      "tools": {
+        "write": true,
+        "edit": false,
+        "bash": false,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/growth-marketer.md}"
+    },
+    "dev": {
+      "description": "Full-stack developer for implementation and coding",
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true,
+        "task": true
+      },
+      "prompt": "{file:bmad-core/agents/dev.md}"
+    },
+    "bmad-orchestrator": {
+      "description": "Master Orchestrator for workflow coordination, multi-agent tasks, role switching guidance, and BMad method expertise",
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.2,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true,
+        "task": true
+      },
+      "prompt": "{file:bmad-core/agents/bmad-orchestrator.md}"
+    },
+    "architect": {
+      "description": "System architect for holistic application design",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.2,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/architect.md}"
+    },
+    "analyst": {
+      "description": "Business Analyst for market research, brainstorming, competitive analysis, creating project briefs, initial project discovery, and documenting existing projects",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "temperature": 0.2,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      },
+      "prompt": "{file:bmad-core/agents/analyst.md}"
+    }
+  },
+  "$schema": "https://opencode.ai/config.json"
+}

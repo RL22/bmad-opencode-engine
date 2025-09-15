@@ -1,0 +1,16 @@
+# BMAD Workflow: Atlas Mind Map Specialist Agent Overview
+# Create cohesive overview document for the new Atlas agent
+
+name: "Create Atlas Agent Overview"
+description: "Generate comprehensive overview of Atlas Mind Map Specialist agent using project brief template"
+
+steps:
+  - agent: "architect"
+    task: "/create-doc"
+    prompt: "Create a comprehensive overview document for the Atlas Mind Map Specialist agent based on our development discussion"
+    template: "bmad-core/templates/project-brief-tmpl.yaml"
+    mode: "interactive"
+    variables:
+      project_name: "Atlas Mind Map Specialist Agent"
+      document_type: "Agent Overview"
+      epic_focus: "Mind Map-Driven Software Implementation"
