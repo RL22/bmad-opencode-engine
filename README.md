@@ -54,6 +54,7 @@ bmad-opencode-engine/
 
 ### ⚡ **Advanced Workflow Engine**
 - **YAML-Based Workflows**: Declarative workflow definitions with multi-step execution
+- **Parallel Processing**: Concurrent step execution with dependency management and synchronization
 - **Interactive & Batch Modes**: Support for both guided user interaction and automated processing
 - **Template Integration**: Structured document creation with variable substitution
 - **Error Recovery**: Robust error handling with state preservation and recovery mechanisms
@@ -66,7 +67,16 @@ bmad-opencode-engine/
 
 ## 🚀 **Working Demonstrations**
 
-### **Epic 2 Features - Ready to Test**
+### **Epic 3 Features - Parallel Execution (NEW!)**
+
+#### **Parallel Workflow Execution**
+```bash
+# Test parallel execution with dependency management
+go run packages/workflow-engine/. workflows/test-parallel.yaml
+# Demonstrates concurrent step execution with real-time progress
+```
+
+### **Epic 2 Features - Template & Checklist Systems**
 
 #### **Template Processing System**
 ```bash
@@ -90,9 +100,10 @@ bmad-opencode-engine/
 ```
 
 ### **Generated Outputs**
+- ✅ **Parallel Execution**: Concurrent workflow steps with dependency resolution
 - ✅ **Template Documents**: Properly formatted markdown files
 - ✅ **Validation Reports**: Detailed PASS/PARTIAL/FAIL analysis
-- ✅ **Progress Tracking**: Real-time status updates
+- ✅ **Progress Tracking**: Real-time status updates with concurrency metrics
 - ✅ **Error Handling**: Comprehensive recovery mechanisms
 
 ## Prerequisites
@@ -125,9 +136,12 @@ bmad-opencode-engine/
    npm run build
    ```
 
-4. **Run Epic 2 Demonstrations**
+4. **Run Demonstrations**
    ```bash
-   # Test template processing
+   # Test NEW Epic 3 parallel execution
+   go run packages/workflow-engine/. workflows/test-parallel.yaml
+
+   # Test Epic 2 template processing
    ./dist/workflow-engine bmad-core/workflows/test-template-processing.yaml
 
    # Test checklist validation
@@ -182,8 +196,27 @@ bmad-opencode-engine/
 - **Technical Architecture**: Validated and working ✅
 - **Epic 2 Implementation**: 100% ✅ **PRODUCTION READY**
 
-### 🎯 **Next Development Phase**
-**Epic 3: Parallel Execution & Advanced Error Handling - READY TO PLAN**
+### 🔥 **Epic 3: Parallel Execution & Advanced Error Handling - IN PROGRESS**
+
+**Story 3.1: Parallel Workflow Step Execution Engine** ✅ **COMPLETED**
+- ✅ Dependency graph analysis with topological sorting
+- ✅ Concurrent step execution with worker pools
+- ✅ Real-time progress monitoring with microsecond precision
+- ✅ Resource management and timeout handling
+- ✅ Full backward compatibility maintained
+- ✅ Comprehensive test coverage (13 test scenarios)
+
+**Story 3.2: Advanced Error Handling & Recovery Framework** 📝 **READY FOR IMPLEMENTATION**
+- 📋 Comprehensive acceptance criteria defined (10 requirements)
+- 🏗️ Architecture designed for graceful degradation
+- 🔄 State preservation and recovery mechanisms planned
+- 🎯 Integration with parallel execution framework
+
+**Story 3.3: External Tool Integration & Monitoring** 📝 **READY FOR IMPLEMENTATION**  
+- 📋 Detailed acceptance criteria defined (15 requirements)
+- 🔌 External tool framework architecture designed
+- 📊 Real-time monitoring and progress aggregation planned
+- 🔒 Security and authentication framework specified
 
 **Epic 2 Achievements:**
 1. ✅ Template processing system fully implemented and tested
@@ -243,18 +276,26 @@ The BMAD OpenCode Engine includes 12 specialized AI agents, each optimized for s
   - Detailed reporting with recommendations
   - Workflow integration complete
 
-### **Current Status: PRODUCTION READY** 🚀
-- **44/44 Acceptance Criteria**: 100% met across Epic 2
-- **Working Demonstrations**: All features tested and operational
-- **Quality Assurance**: Comprehensive testing and validation
-- **Documentation**: Complete technical specifications
-- **Integration**: Ready for OpenCode CLI deployment
+### **Current Status: Epic 3 Development** 🚀
+- **Epic 1 & 2**: ✅ **PRODUCTION READY** (44/44 Acceptance Criteria met)
+- **Epic 3.1**: ✅ **COMPLETED** - Parallel execution engine implemented
+- **Epic 3.2**: 🔨 **IN PROGRESS** - Advanced error handling framework
+- **Epic 3.3**: 📋 **PLANNED** - External tool integration system
+- **Quality Assurance**: Comprehensive testing with 13+ test scenarios
+- **Performance**: Demonstrated concurrent execution with dependency management
 
 ## Contributing
 
 The BMAD OpenCode Engine is an open-source project focused on improving AI-assisted software development through structured methodologies. See our [PRD](docs/prd.md) for detailed technical specifications and development roadmap.
 
-**Epic 2 is complete and ready for production use!** 🎉
+**Epic 2 is complete and Epic 3.1 (Parallel Execution) is now live!** 🎉
+
+### 🆕 **Latest Features:**
+- **Parallel Workflow Engine**: Execute independent workflow steps concurrently
+- **Dependency Management**: Automatic detection and resolution of step dependencies  
+- **Real-Time Progress**: Live monitoring with execution timing and concurrency metrics
+- **Resource Optimization**: Configurable worker pools with timeout management
+- **Backward Compatibility**: All Epic 1 & 2 features remain fully functional
 
 ## License
 

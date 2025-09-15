@@ -1,0 +1,34 @@
+name: "Test Parallel Execution"
+description: "Test workflow to verify parallel execution capabilities"
+parallel:
+  enable_parallel: true
+  max_concurrency: 3
+  timeout_duration: "30s"
+  dependency_check: true
+variables:
+  project_name: "BMAD Test Project"
+
+steps:
+  - agent: "architect"
+    task: "design-foundation"
+    prompt: "Create foundational architecture design"
+    
+  - agent: "po" 
+    task: "create-requirements"
+    prompt: "Document initial requirements"
+    
+  - agent: "ux-expert"
+    task: "create-wireframes" 
+    prompt: "Design user interface wireframes"
+    
+  - agent: "dev"
+    task: "setup-project"
+    prompt: "Initialize development environment"
+    variables:
+      requires: "architecture"
+    
+  - agent: "qa"
+    task: "create-test-plan"
+    prompt: "Develop comprehensive test strategy"
+    variables:
+      requires: "requirements"
